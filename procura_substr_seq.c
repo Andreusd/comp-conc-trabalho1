@@ -38,31 +38,31 @@ int procuraSubstr(char *string, char *substring) {
 }
 
 int main(int argc, char **argv) {
-  char textoArquivo[TAM_BUF];
-  char *nomeArquivo = DEFAULT_FILENAME;
-  char *stringProcurada;
+    char textoArquivo[TAM_BUF];
+    char *nomeArquivo = DEFAULT_FILENAME;
+    char *stringProcurada;
 
-  if ( argc < 2 ) {
-    fprintf(stderr, "digite %s <substring> [arquivoEntrada]\n", argv[0]);
-    printf("argc: %d\n", argc);
-    return 1;
-  } else if ( argc == 3 ) {
-    nomeArquivo = argv[2];
-  }
+    if ( argc < 2 ) {
+        fprintf(stderr, "digite %s <substring> [arquivoEntrada]\n", argv[0]);
+        printf("argc: %d\n", argc);
+        return 1;
+    } else if ( argc == 3 ) {
+      // nomeArquivo = argv[2];
+    }
 
-  stringProcurada = argv[1];
+    stringProcurada = argv[1];
 
-  FILE *fptr = fopen(nomeArquivo, "r");
-  if ( fptr == NULL ) {
-      printf("Erro na abertura!\n");
-      exit(1);
-  }
-  fgets(textoArquivo, TAM_BUF, fptr);
+    FILE *fptr = fopen(nomeArquivo, "r");
+    if ( fptr == NULL ) {
+        printf("Erro na abertura!\n");
+        exit(1);
+    }
+    fgets(textoArquivo, TAM_BUF, fptr);
 
-  fclose(fptr);
+    fclose(fptr);
 
-  int index = procuraSubstr(textoArquivo, stringProcurada);
-  printf("%d\n", index);
+    int index = procuraSubstr(textoArquivo, stringProcurada);
+    printf("%d\n", index);
 
-  return 0;
+    return 0;
 }
