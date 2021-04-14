@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TAM_BUF 100000
+#define TAM_BUF             100000
+#define DEFAULT_FILENAME    "arquivo_alvo.txt"
 
 int procuraSubstr(char *string, char *substring) {
     int tamString = strlen(string); // debug
@@ -38,16 +39,20 @@ int procuraSubstr(char *string, char *substring) {
 
 int main(int argc, char **argv) {
   char textoArquivo[TAM_BUF];
+  char *nomeArquivo = DEFAULT_FILENAME;
   char *stringProcurada;
 
   if ( argc < 2 ) {
-    fprintf(stderr, "digite %s <substring>\n", argv[0]);
+    fprintf(stderr, "digite %s <substring> [arquivoEntrada]\n", argv[0]);
+    printf("argc: %d\n", argc);
     return 1;
+  } else if ( argc == 3 ) {
+    nomeArquivo = argv[2];
   }
 
   stringProcurada = argv[1];
 
-  FILE *fptr = fopen("arquivo_alvo.txt", "r");
+  FILE *fptr = fopen(nomeArquivo, "r");
   if ( fptr == NULL ) {
       printf("Erro na abertura!\n");
       exit(1);
