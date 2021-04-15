@@ -6,8 +6,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include "timer.h"
 
-#define TAM_BUF             100000
+#define TAM_BUF             5000000
 #define DEFAULT_FILENAME    "arquivo_alvo.txt"
 
 typedef struct {
@@ -45,7 +46,7 @@ int procuraSubstr(char *texto, int fim, long int id) {
 
             // Se chegamos ao final da substring, achamos uma posição!
             if ( stringProcurada[j] == '\0' ) {
-                printf("id=%ld: achei! %d\n", id, i);
+                printf("id=%ld: achei! posicao local: %d\n", id, i);
                 return i;
             }
         }
@@ -93,7 +94,8 @@ int main(int argc, char **argv) {
     char textoArquivo[TAM_BUF];
     long int tamTextoArquivo;
 
-    // double inicio,fim; // variaveis para medir o tempo
+    double inicio,fim; // variaveis para medir o tempo
+
     pthread_t *tid; //identificadores das threads no sistema
     arg_t *args; //identificadores das threads no sistema
     long int index; //indice da substring
@@ -116,11 +118,12 @@ int main(int argc, char **argv) {
         printf("Erro na abertura!\n");
         exit(1);
     }
-    fscanf(fptr,"%s", textoArquivo);
+    fgets(textoArquivo, TAM_BUF, fptr);
     tamTextoArquivo = strlen(textoArquivo);
 
     fclose(fptr);
 
+    GET_TIME(inicio);
     // cria os identificadores
     tid = (pthread_t *) malloc(sizeof(pthread_t) * nthreads);
     if ( tid == NULL ) {
@@ -170,6 +173,7 @@ int main(int argc, char **argv) {
         }
     }
 
+    short int encontreiPeloMenosUmaOcorrencia = 0;
     // aguardar o termino das threads
     index = 0x7FFFFFFFFFFFFFFF;
     for ( int i = 0; i < nthreads; i++ ) {
@@ -182,10 +186,16 @@ int main(int argc, char **argv) {
         long int result = indexLocal + args[i].offset;
         if ( indexLocal > -1 && result < index ) {
             index = result;
+            encontreiPeloMenosUmaOcorrencia = 1;
         }
     }
-
-    printf("%ld\n", index);
+    GET_TIME(fim);
+    if(encontreiPeloMenosUmaOcorrencia)
+        printf("%ld\n", index);
+    else {
+        printf("nenhuma ocorrencia encontrada :(\n");
+    }
+    printf("tempo da implementacao concorrente: %lf\n",fim-inicio);
 
     return 0;
 }

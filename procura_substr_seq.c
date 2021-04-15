@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
+#include "timer.h"
 
-#define TAM_BUF             100000
+#define TAM_BUF             5000000
 #define DEFAULT_FILENAME    "arquivo_alvo.txt"
 
 int procuraSubstr(char *string, char *substring) {
@@ -41,6 +43,7 @@ int main(int argc, char **argv) {
     char textoArquivo[TAM_BUF];
     char *nomeArquivo = DEFAULT_FILENAME;
     char *stringProcurada;
+    double inicio,fim; // variaveis para medir o tempo
 
     if ( argc < 2 ) {
         fprintf(stderr, "digite %s <substring> [arquivoEntrada]\n", argv[0]);
@@ -61,8 +64,11 @@ int main(int argc, char **argv) {
 
     fclose(fptr);
 
+    GET_TIME(inicio);
     int index = procuraSubstr(textoArquivo, stringProcurada);
-    printf("%d\n", index);
+    GET_TIME(fim);
+    printf("indice: %d\n", index);
+    printf("tempo da implementacao sequencial: %lf\n",fim-inicio);
 
     return 0;
 }
