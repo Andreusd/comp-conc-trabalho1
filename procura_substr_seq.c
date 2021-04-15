@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
         printf("argc: %d\n", argc);
         return 1;
     } else if ( argc == 3 ) {
-      // nomeArquivo = argv[2];
+      nomeArquivo = argv[2];
     }
 
     stringProcurada = argv[1];
