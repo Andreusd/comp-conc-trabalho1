@@ -10,67 +10,99 @@
 #define TAM_BUF             100000
 #define DEFAULT_FILENAME    "arquivo_alvo.txt"
 
-int nthreads; //numero de threads
+typedef struct {
+    long int id;
+    long int lenTexto;
+    char *texto;
+    long int indexLocal;
+} arg_t;
 
-char textoArquivo[TAM_BUF];
-char stringProcurada[50];
+char *stringProcurada;
+int tamStringProcurada;
 
-int procuraSubstr(int ini, int fim) {
-    int tamStringProcurada = strlen(stringProcurada);
+int procuraSubstr(char *texto, int fim, long int id) {
+    // int tamStringProcurada = strlen(stringProcurada);
     // printf("procurando %s\ntamanho da string: %d\n",stringProcurada,fim-ini); //debug
-    for ( int i = ini; i < fim ; i++ ) {
-        if ( textoArquivo[i] == stringProcurada[0] ) {
-            for ( int j = 0; j < tamStringProcurada; j++ ) {
-                if( textoArquivo[i+j] != stringProcurada[j] ) {
+    for ( int i = 0; i < fim ; i++ ) {
+
+        // Ter certeza que não está errado
+        if ( texto[i] == '\0' ) {
+            printf("ERRO-- texto[i] == '\\0'\n");
+        }
+
+        // Se é um possível começo
+        if ( texto[i] == stringProcurada[0] ) {
+            int j;
+
+            // Até o final da substring
+            for ( j = 0; stringProcurada[j] != '\0' && texto[i+j] != '\0'; j++ ) {
+                // Se está diferente, j = 0 e para
+                if( texto[i+j] != stringProcurada[j] ) {
                     break;
                 }
-                if ( j == tamStringProcurada-1 ) {
-                    printf("\nachei! %d\n", i);
-                    return i;
-                }
+            }
+
+            // Se chegamos ao final da substring, achamos uma posição!
+            if ( stringProcurada[j] == '\0' ) {
+                printf("id=%ld: achei! %d\n", id, i);
+                return i;
             }
         }
     }
-    printf("\nnao achei :( \n");
+    printf("id=%ld: nao achei :(\n", id);
     return -1;
 }
 
 void* tarefa (void *arg) {
-    int tamTextoArquivo = strlen(textoArquivo);
-    long int id = (long int) arg; //identificador da thread
-    int *indexLocal; //indice da substring
+    arg_t a = * (arg_t *)arg;
+    long int id = a.id;
+    long int lenTexto = a.lenTexto;
+    char *texto = a.texto;
 
-    indexLocal = (int *) malloc(sizeof(int));
-    if ( indexLocal == NULL ) {
-        exit(1);
-    }
-    long int tamBloco = tamTextoArquivo/nthreads;  //tamanho do bloco de cada thread
-    long int ini = id * tamBloco; //elemento inicial do bloco da thread
-    long int fim; //elemento final(nao processado) do bloco da thread
+    /* Movido para a main
+     * int tamTextoArquivo = strlen(textoArquivo);
+     * long int id = (long int) arg; //identificador da thread
+     * int *indexLocal; //indice da substring
 
-    if ( id == nthreads-1 )
-        fim = tamTextoArquivo;
-    else
-        fim = ini + tamBloco; //trata o resto se houver
+     * indexLocal = (int *) malloc(sizeof(int));
+     * if ( indexLocal == NULL ) {
+     *     exit(1);
+     * }
+     * long int tamBloco = tamTextoArquivo/nthreads;  //tamanho do bloco de cada thread
+     * long int ini = id * tamBloco; //elemento inicial do bloco da thread
+     * long int fim; //elemento final(nao processado) do bloco da thread
 
-    *indexLocal = procuraSubstr(ini,fim);
+     * if ( id == nthreads-1 )
+     *     fim = tamTextoArquivo;
+     * else
+     *     fim = ini + tamBloco; //trata o resto se houver
+     */
 
-    pthread_exit((void *) indexLocal);
+    a.indexLocal = procuraSubstr(texto, lenTexto, id);
+
+    pthread_exit(NULL);
 }
 
 int main(int argc, char **argv) {
 
-    double inicio,fim; // variaveis para medir o tempo
+    int nthreads; //numero de threads
+
+    char textoArquivo[TAM_BUF];
+    long int tamTextoArquivo;
+
+    // double inicio,fim; // variaveis para medir o tempo
     pthread_t *tid; //identificadores das threads no sistema
-    double *retorno; //valor de retorno das threads
-    int index; //indice da substring
+    arg_t *args; //identificadores das threads no sistema
+    long int index; //indice da substring
 
     if ( argc < 3 ) {
         fprintf(stderr, "digite %s <substring> <nthreads>\n", argv[0]);
         return 1;
     }
+    printf("argc: %d\n", argc); //debug
 
-    strcpy(stringProcurada,argv[1]);
+    stringProcurada = argv[1];
+    tamStringProcurada = strlen(stringProcurada);
     nthreads = atoll(argv[2]);
 
     FILE *fptr = fopen(DEFAULT_FILENAME, "r");
@@ -79,34 +111,73 @@ int main(int argc, char **argv) {
         exit(1);
     }
     fscanf(fptr,"%s", textoArquivo);
+    tamTextoArquivo = strlen(textoArquivo);
 
-    //cria os identificadores
+    fclose(fptr);
+
+    // cria os identificadores
     tid = (pthread_t *) malloc(sizeof(pthread_t) * nthreads);
     if ( tid == NULL ) {
         fprintf(stderr, "ERRO--malloc\n");
         return 2;
     }
 
-    //criar as threads
+    // cria os argumentos
+    args = (arg_t *) malloc(sizeof(arg_t) * nthreads);
+    if ( args == NULL ) {
+        fprintf(stderr, "ERRO--malloc\n");
+        return 2;
+    }
+
+    /* Divisão antiga
+     * long int tamBloco = tamTextoArquivo/nthreads;  //tamanho do bloco de cada thread
+     * long int ini = id * tamBloco; //elemento inicial do bloco da thread
+     * long int fim; //elemento final(nao processado) do bloco da thread
+     *
+     * if ( id == nthreads-1 ) fim = tamTextoArquivo;
+     * else fim = ini + tamBloco; //trata o resto se houver
+     */
+
+    long int offset = 0;
+    long int tam = tamTextoArquivo / nthreads;
+    long int rem = tamTextoArquivo % nthreads;
+
+    // criar as threads
     for ( long int i = 0; i < nthreads; i++) {
-        if ( pthread_create(tid+i, NULL, tarefa, (void*) i) ) {
+        args[i].id = i;
+        args[i].lenTexto = tam;
+        args[i].texto = textoArquivo + offset;
+        args[i].indexLocal = -1;
+
+        if ( rem > 0 ) {
+            args[i].lenTexto += 1;
+            rem -= 1;
+        }
+        offset += args[i].lenTexto;
+
+        // printf("id=%ld, lenTexto=%ld, texto=%ld, rem=%ld\n",
+        //         args[i].id, args[i].lenTexto, args[i].texto, rem);
+        if ( pthread_create(tid+i, NULL, tarefa, (void *) (args+i)) ) {
             fprintf(stderr, "ERRO--pthread_create\n");
             return 3;
         }
     }
 
-    //aguardar o termino das threads
-    for ( long int i = 0; i < nthreads; i++ ) {
-        if ( pthread_join(*(tid+i), (void**) &retorno) ) {
+    // aguardar o termino das threads
+    index = 0xFFFFFFFFFFFFFFFF;
+    for ( int i = 0; i < nthreads; i++ ) {
+        if ( pthread_join(*(tid+i), NULL) ) {
             fprintf(stderr, "ERRO--pthread_create\n");
             return 3;
         }
-        if ( *retorno != -1 ) {
-            index = *retorno;
+
+        long int result = args[i].indexLocal;
+        if ( result != -1 && index < result ) {
+            index = result;
         }
     }
 
-    printf("%d",index);
+    printf("%ld\n", index);
 
     return 0;
 }
