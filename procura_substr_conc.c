@@ -12,6 +12,7 @@
 
 typedef struct {
     long int id;
+    long int offset;
     long int lenTexto;
     char *texto;
     long int indexLocal;
@@ -54,10 +55,10 @@ int procuraSubstr(char *texto, int fim, long int id) {
 }
 
 void* tarefa (void *arg) {
-    arg_t a = * (arg_t *)arg;
-    long int id = a.id;
-    long int lenTexto = a.lenTexto;
-    char *texto = a.texto;
+    arg_t *a = (arg_t *)arg;
+    long int id = a->id;
+    long int lenTexto = a->lenTexto;
+    char *texto = a->texto;
 
     /* Movido para a main
      * int tamTextoArquivo = strlen(textoArquivo);
@@ -78,7 +79,7 @@ void* tarefa (void *arg) {
      *     fim = ini + tamBloco; //trata o resto se houver
      */
 
-    a.indexLocal = procuraSubstr(texto, lenTexto, id);
+    a->indexLocal = procuraSubstr(texto, lenTexto, id);
 
     pthread_exit(NULL);
 }
@@ -86,6 +87,8 @@ void* tarefa (void *arg) {
 int main(int argc, char **argv) {
 
     int nthreads; //numero de threads
+
+    char *nomeArquivo = DEFAULT_FILENAME;
 
     char textoArquivo[TAM_BUF];
     long int tamTextoArquivo;
@@ -96,16 +99,19 @@ int main(int argc, char **argv) {
     long int index; //indice da substring
 
     if ( argc < 3 ) {
-        fprintf(stderr, "digite %s <substring> <nthreads>\n", argv[0]);
+        fprintf(stderr, "digite %s <nthreads> <substring> [arquivoEntrada]\n", argv[0]);
+        printf("argc: %d\n", argc);
         return 1;
+    } else if ( argc == 4 ) {
+      nomeArquivo = argv[3];
     }
-    printf("argc: %d\n", argc); //debug
 
-    stringProcurada = argv[1];
+    nthreads = atoll(argv[1]);
+
+    stringProcurada = argv[2];
     tamStringProcurada = strlen(stringProcurada);
-    nthreads = atoll(argv[2]);
 
-    FILE *fptr = fopen(DEFAULT_FILENAME, "r");
+    FILE *fptr = fopen(nomeArquivo, "r");
     if ( fptr == NULL ) {
         printf("Erro na abertura!\n");
         exit(1);
@@ -145,6 +151,7 @@ int main(int argc, char **argv) {
     // criar as threads
     for ( long int i = 0; i < nthreads; i++) {
         args[i].id = i;
+        args[i].offset = offset;
         args[i].lenTexto = tam;
         args[i].texto = textoArquivo + offset;
         args[i].indexLocal = -1;
@@ -164,15 +171,16 @@ int main(int argc, char **argv) {
     }
 
     // aguardar o termino das threads
-    index = 0xFFFFFFFFFFFFFFFF;
+    index = 0x7FFFFFFFFFFFFFFF;
     for ( int i = 0; i < nthreads; i++ ) {
         if ( pthread_join(*(tid+i), NULL) ) {
             fprintf(stderr, "ERRO--pthread_create\n");
             return 3;
         }
 
-        long int result = args[i].indexLocal;
-        if ( result != -1 && index < result ) {
+        long int indexLocal = args[i].indexLocal;
+        long int result = indexLocal + args[i].offset;
+        if ( indexLocal > -1 && result < index ) {
             index = result;
         }
     }
