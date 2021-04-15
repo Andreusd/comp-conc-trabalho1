@@ -19,7 +19,7 @@ int procuraSubstr(char *string, char *substring) {
             // Até o final da substring
             for ( j = 0; substring[j] != '\0'; j++ ) {
 
-                // Se está diferente, i = 0 e para
+                // Se está diferente, j = 0 e para
                 if ( string[i+j] != substring[j] ) {
                     j = 0;
                     break;
