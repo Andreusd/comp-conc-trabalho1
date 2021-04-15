@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
 
     pthread_t *tid; //identificadores das threads no sistema
     arg_t *args; //identificadores das threads no sistema
-    long int index; //indice da substring
+    long int index = -1; //indice da substring
 
     if ( argc < 3 ) {
         fprintf(stderr, "digite %s <nthreads> <substring> [arquivoEntrada]\n", argv[0]);
@@ -173,9 +173,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    short int encontreiPeloMenosUmaOcorrencia = 0;
     // aguardar o termino das threads
-    index = 0x7FFFFFFFFFFFFFFF;
     for ( int i = 0; i < nthreads; i++ ) {
         if ( pthread_join(*(tid+i), NULL) ) {
             fprintf(stderr, "ERRO--pthread_create\n");
@@ -183,14 +181,13 @@ int main(int argc, char **argv) {
         }
 
         long int indexLocal = args[i].indexLocal;
-        long int result = indexLocal + args[i].offset;
-        if ( indexLocal > -1 && result < index ) {
-            index = result;
-            encontreiPeloMenosUmaOcorrencia = 1;
+        if ( indexLocal != -1 ) {
+            index = indexLocal + args[i].offset;
+            break; // se uma thread retornar uma posicao valida, posso sair, pois elas estao em ordem
         }
     }
     GET_TIME(fim);
-    if(encontreiPeloMenosUmaOcorrencia)
+    if(index!=-1)
         printf("%ld\n", index);
     else {
         printf("nenhuma ocorrencia encontrada :(\n");
