@@ -3,13 +3,13 @@
 #include <string.h>
 #include <pthread.h>
 #include "timer.h"
+#include "linked_array.c"
 
 #define TAM_BUF             5000000
 #define DEFAULT_FILENAME    "arquivo_alvo.txt"
 
-int procuraSubstr(char *string, char *substring) {
-    int tamString = strlen(string); // debug
-    printf("procurando: %s\ntamanho da string: %d\n", substring, tamString); //debug
+linkedArray * procuraSubstr(char *string, char *substring) {
+    linkedArray * la = novo_linkedArray();
 
     // Até o final da string
     for ( int i = 0; string[i] != '\0'; i++ ) {
@@ -30,13 +30,12 @@ int procuraSubstr(char *string, char *substring) {
 
             // Se chegamos ao final da substring, achamos uma posição!
             if ( substring[j] == '\0' ) {
-                printf("achei!\n");
-                return i;
+                push_linkedArray(la,i);
             }
         }
 
     }
-    return -1;
+    return la;
 }
 
 int main(int argc, char **argv) {
@@ -65,9 +64,23 @@ int main(int argc, char **argv) {
     fclose(fptr);
 
     GET_TIME(inicio);
-    int index = procuraSubstr(textoArquivo, stringProcurada);
+    linkedArray * la = procuraSubstr(textoArquivo, stringProcurada);
     GET_TIME(fim);
-    printf("indice: %d\n", index);
+    printf("indices:\n");
+    int pos=0;
+    linkedArray * primeiro = la;
+    while(la) {
+        printf("%d\n",get_linkedArray(la,pos%50));
+        pos++;
+        if(pos%50 >= la->pos){
+            break;
+        }
+        if(pos%50==0) {
+            la = la->next;
+        }
+    }
+    destroy_linkedArray(primeiro);
+    printf("houve %d posicoes encontradas\n",pos);
     printf("tempo da implementacao sequencial: %lf\n",fim-inicio);
 
     return 0;
