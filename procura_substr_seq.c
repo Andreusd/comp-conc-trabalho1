@@ -30,7 +30,9 @@ linkedArray * procuraSubstr(char *string, char *substring) {
 
             // Se chegamos ao final da substring, achamos uma posição!
             if ( substring[j] == '\0' ) {
-                push_linkedArray(la,i);
+                if(push_linkedArray(la,i)<0) {
+                    fprintf(stderr,"ERRO GRAVE PUSH LINKEDARRAY %d\n",i);
+                }
             }
         }
 
@@ -69,6 +71,7 @@ int main(int argc, char **argv) {
     printf("indices:\n");
     int pos=0;
     linkedArray * primeiro = la;
+    // IMPRIME OS VALORES
     while(la) {
         printf("%d\n",get_linkedArray(la,pos%50));
         pos++;

@@ -7,6 +7,7 @@
 #include <string.h>
 #include <pthread.h>
 #include "timer.h"
+#include "linked_array.c"
 
 #define TAM_BUF             5000000
 #define DEFAULT_FILENAME    "arquivo_alvo.txt"
@@ -16,15 +17,13 @@ typedef struct {
     long int offset;
     long int lenTexto;
     char *texto;
-    long int indexLocal;
 } arg_t;
 
 char *stringProcurada;
 int tamStringProcurada;
 
-int procuraSubstr(char *texto, int fim, long int id) {
-    // int tamStringProcurada = strlen(stringProcurada);
-    // printf("procurando %s\ntamanho da string: %d\n",stringProcurada,fim-ini); //debug
+linkedArray * procuraSubstr(char *texto, int fim, long int offset, long int id) {
+    linkedArray * la = novo_linkedArray();
     for ( int i = 0; i < fim ; i++ ) {
 
         // Ter certeza que não está errado
@@ -46,13 +45,14 @@ int procuraSubstr(char *texto, int fim, long int id) {
 
             // Se chegamos ao final da substring, achamos uma posição!
             if ( stringProcurada[j] == '\0' ) {
-                printf("id=%ld: achei! posicao local: %d\n", id, i);
-                return i;
+                // printf("id=%ld: achei! posicao local: %d\n", id, i);
+                if(push_linkedArray(la,i+offset)<0) {
+                    fprintf(stderr,"ERRO GRAVE PUSH LINKEDARRAY %d THREAD %ld\n",i,id);
+                }
             }
         }
     }
-    printf("id=%ld: nao achei :(\n", id);
-    return -1;
+    return la;
 }
 
 void* tarefa (void *arg) {
@@ -61,28 +61,9 @@ void* tarefa (void *arg) {
     long int lenTexto = a->lenTexto;
     char *texto = a->texto;
 
-    /* Movido para a main
-     * int tamTextoArquivo = strlen(textoArquivo);
-     * long int id = (long int) arg; //identificador da thread
-     * int *indexLocal; //indice da substring
+    linkedArray * la = procuraSubstr(texto, lenTexto, a->offset, id);
 
-     * indexLocal = (int *) malloc(sizeof(int));
-     * if ( indexLocal == NULL ) {
-     *     exit(1);
-     * }
-     * long int tamBloco = tamTextoArquivo/nthreads;  //tamanho do bloco de cada thread
-     * long int ini = id * tamBloco; //elemento inicial do bloco da thread
-     * long int fim; //elemento final(nao processado) do bloco da thread
-
-     * if ( id == nthreads-1 )
-     *     fim = tamTextoArquivo;
-     * else
-     *     fim = ini + tamBloco; //trata o resto se houver
-     */
-
-    a->indexLocal = procuraSubstr(texto, lenTexto, id);
-
-    pthread_exit(NULL);
+    pthread_exit((void*)la);
 }
 
 int main(int argc, char **argv) {
@@ -98,7 +79,7 @@ int main(int argc, char **argv) {
 
     pthread_t *tid; //identificadores das threads no sistema
     arg_t *args; //identificadores das threads no sistema
-    long int index = -1; //indice da substring
+    linkedArray **retorno; //retorno da funcao
 
     if ( argc < 3 ) {
         fprintf(stderr, "digite %s <nthreads> <substring> [arquivoEntrada]\n", argv[0]);
@@ -127,25 +108,23 @@ int main(int argc, char **argv) {
     // cria os identificadores
     tid = (pthread_t *) malloc(sizeof(pthread_t) * nthreads);
     if ( tid == NULL ) {
-        fprintf(stderr, "ERRO--malloc\n");
+        fprintf(stderr, "ERRO--malloc tid\n");
         return 2;
     }
 
     // cria os argumentos
     args = (arg_t *) malloc(sizeof(arg_t) * nthreads);
     if ( args == NULL ) {
-        fprintf(stderr, "ERRO--malloc\n");
+        fprintf(stderr, "ERRO--malloc args\n");
         return 2;
     }
 
-    /* Divisão antiga
-     * long int tamBloco = tamTextoArquivo/nthreads;  //tamanho do bloco de cada thread
-     * long int ini = id * tamBloco; //elemento inicial do bloco da thread
-     * long int fim; //elemento final(nao processado) do bloco da thread
-     *
-     * if ( id == nthreads-1 ) fim = tamTextoArquivo;
-     * else fim = ini + tamBloco; //trata o resto se houver
-     */
+    //cria os retornos
+    retorno = (linkedArray **) malloc(sizeof(linkedArray *) * nthreads);
+    if ( retorno == NULL ) {
+        fprintf(stderr, "ERRO--malloc retorno\n");
+        return 2;
+    }
 
     long int offset = 0;
     long int tam = tamTextoArquivo / nthreads;
@@ -157,7 +136,6 @@ int main(int argc, char **argv) {
         args[i].offset = offset;
         args[i].lenTexto = tam;
         args[i].texto = textoArquivo + offset;
-        args[i].indexLocal = -1;
 
         if ( rem > 0 ) {
             args[i].lenTexto += 1;
@@ -175,24 +153,35 @@ int main(int argc, char **argv) {
 
     // aguardar o termino das threads
     for ( int i = 0; i < nthreads; i++ ) {
-        if ( pthread_join(*(tid+i), NULL) ) {
-            fprintf(stderr, "ERRO--pthread_create\n");
+        if ( pthread_join(*(tid+i), (void**) (retorno+i) ) ) {
+            fprintf(stderr, "ERRO--pthread_join\n");
             return 3;
         }
-
-        long int indexLocal = args[i].indexLocal;
-        if ( indexLocal != -1 ) {
-            index = indexLocal + args[i].offset;
-            break; // se uma thread retornar uma posicao valida, posso sair, pois elas estao em ordem
-        }
     }
+    free(args);
+    free(tid);
     GET_TIME(fim);
-    if(index!=-1)
-        printf("%ld\n", index);
-    else {
-        printf("nenhuma ocorrencia encontrada :(\n");
+    //IMPRIME OS VALORES
+    int total = 0;
+    for ( int i = 0; i < nthreads; i++ ) {
+        int pos = 0;
+        linkedArray * la = retorno[i];
+        if(la->pos<=0) continue; // nao achou nada
+        while(la) {
+            printf("%d: %d\n",i,get_linkedArray(la,pos%50));
+            pos++;
+            if(pos%50 >= la->pos){
+                break;
+            }
+            if(pos%50==0) {
+                la = la->next;
+            }
+        }
+        destroy_linkedArray(retorno[i]);
+        total+=pos;
     }
+    free(retorno);
+    printf("houve %d posicoes encontradas\n",total);
     printf("tempo da implementacao concorrente: %lf\n",fim-inicio);
-
     return 0;
 }
