@@ -45,9 +45,9 @@ linkedArray * procuraSubstr(char *texto, int fim, long int offset, long int id) 
 
             // Se chegamos ao final da substring, achamos uma posição!
             if ( stringProcurada[j] == '\0' ) {
-                // printf("id=%ld: achei! posicao local: %d\n", id, i);
-                if(push_linkedArray(la,i+offset)<0) {
-                    fprintf(stderr,"ERRO GRAVE PUSH LINKEDARRAY %d THREAD %ld\n",i,id);
+                // printf("id=%ld: achei! posicao local: %d\n", id, i); //DEBUG
+                if ( push_linkedArray(la, i+offset) < 0 ) {
+                    fprintf(stderr, "ERRO GRAVE PUSH LINKEDARRAY %d THREAD %ld\n", i, id);
                 }
             }
         }
@@ -63,7 +63,7 @@ void* tarefa (void *arg) {
 
     linkedArray * la = procuraSubstr(texto, lenTexto, a->offset, id);
 
-    pthread_exit((void*)la);
+    pthread_exit( (void*) la );
 }
 
 int main(int argc, char **argv) {
@@ -105,6 +105,7 @@ int main(int argc, char **argv) {
     fclose(fptr);
 
     GET_TIME(inicio);
+
     // cria os identificadores
     tid = (pthread_t *) malloc(sizeof(pthread_t) * nthreads);
     if ( tid == NULL ) {
@@ -131,7 +132,7 @@ int main(int argc, char **argv) {
     long int rem = tamTextoArquivo % nthreads;
 
     // criar as threads
-    for ( long int i = 0; i < nthreads; i++) {
+    for ( long int i = 0; i < nthreads; i++ ) {
         args[i].id = i;
         args[i].offset = offset;
         args[i].lenTexto = tam;
@@ -160,28 +161,33 @@ int main(int argc, char **argv) {
     }
     free(args);
     free(tid);
+
     GET_TIME(fim);
+
     //IMPRIME OS VALORES
     int total = 0;
     for ( int i = 0; i < nthreads; i++ ) {
         int pos = 0;
         linkedArray * la = retorno[i];
-        if(la->pos<=0) continue; // nao achou nada
-        while(la) {
-            printf("%d: %d\n",i,get_linkedArray(la,pos%50));
+
+        if ( la->pos <= 0 ) continue; // nao achou nada
+
+        while ( la ) {
+            printf("%d: %d\n", i, get_linkedArray(la, pos%50) );
             pos++;
-            if(pos%50 >= la->pos){
+            if ( pos%50 >= la->pos ) {
                 break;
             }
-            if(pos%50==0) {
+            if ( pos%50 == 0 ) {
                 la = la->next;
             }
         }
         destroy_linkedArray(retorno[i]);
-        total+=pos;
+        total += pos;
     }
     free(retorno);
-    printf("houve %d posicoes encontradas\n",total);
-    printf("tempo da implementacao concorrente: %lf\n",fim-inicio);
+    printf("houve %d posicoes encontradas\n", total);
+
+    printf("tempo da implementacao concorrente: %lf\n", fim-inicio);
     return 0;
 }
