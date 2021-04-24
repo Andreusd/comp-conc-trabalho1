@@ -10,21 +10,21 @@
 #include "linked_array.c"
 
 #define TAM_BUF             5000000
-#define DEFAULT_FILENAME    "arquivo_alvo.txt"
+#define DEFAULT_FILENAME    "setup/arquivo_alvo.txt"
+#define F_STD_OUT           "out.out"
 
 typedef struct {
     long int id;
     long int offset;
     long int lenTexto;
-    char *texto;
 } arg_t;
 
-char *stringProcurada;
-int tamStringProcurada;
+char *texto;
+char *substring;
 
-linkedArray * procuraSubstr(char *texto, int fim, long int offset, long int id) {
+linkedArray * procuraSubstr(long int offset, long int fim, long int id) {
     linkedArray * la = novo_linkedArray();
-    for ( int i = 0; i < fim ; i++ ) {
+    for ( int i = offset; i < fim ; i++ ) {
 
         // Ter certeza que não está errado
         if ( texto[i] == '\0' ) {
@@ -32,21 +32,21 @@ linkedArray * procuraSubstr(char *texto, int fim, long int offset, long int id) 
         }
 
         // Se é um possível começo
-        if ( texto[i] == stringProcurada[0] ) {
+        if ( texto[i] == substring[0] ) {
             int j;
 
             // Até o final da substring
-            for ( j = 0; stringProcurada[j] != '\0' && texto[i+j] != '\0'; j++ ) {
+            for ( j = 0; substring[j] != '\0' && texto[i+j] != '\0'; j++ ) {
                 // Se está diferente, j = 0 e para
-                if( texto[i+j] != stringProcurada[j] ) {
+                if( texto[i+j] != substring[j] ) {
                     break;
                 }
             }
 
             // Se chegamos ao final da substring, achamos uma posição!
-            if ( stringProcurada[j] == '\0' ) {
+            if ( substring[j] == '\0' ) {
                 // printf("id=%ld: achei! posicao local: %d\n", id, i); //DEBUG
-                if ( push_linkedArray(la, i+offset) < 0 ) {
+                if ( push_linkedArray(la, i) < 0 ) {
                     fprintf(stderr, "ERRO GRAVE PUSH LINKEDARRAY %d THREAD %ld\n", i, id);
                 }
             }
@@ -58,10 +58,10 @@ linkedArray * procuraSubstr(char *texto, int fim, long int offset, long int id) 
 void* tarefa (void *arg) {
     arg_t *a = (arg_t *)arg;
     long int id = a->id;
+    long int offset = a->offset;
     long int lenTexto = a->lenTexto;
-    char *texto = a->texto;
 
-    linkedArray * la = procuraSubstr(texto, lenTexto, a->offset, id);
+    linkedArray * la = procuraSubstr(offset, offset + lenTexto, id);
 
     pthread_exit( (void*) la );
 }
@@ -74,6 +74,8 @@ int main(int argc, char **argv) {
 
     char textoArquivo[TAM_BUF];
     long int tamTextoArquivo;
+
+    long int tamSubstring;
 
     double inicio,fim; // variaveis para medir o tempo
 
@@ -91,8 +93,8 @@ int main(int argc, char **argv) {
 
     nthreads = atoll(argv[1]);
 
-    stringProcurada = argv[2];
-    tamStringProcurada = strlen(stringProcurada);
+    substring = argv[2];
+    tamSubstring = strlen(substring);
 
     FILE *fptr = fopen(nomeArquivo, "r");
     if ( fptr == NULL ) {
@@ -100,6 +102,7 @@ int main(int argc, char **argv) {
         exit(1);
     }
     fgets(textoArquivo, TAM_BUF, fptr);
+    texto = textoArquivo;
     tamTextoArquivo = strlen(textoArquivo);
 
     fclose(fptr);
@@ -128,15 +131,14 @@ int main(int argc, char **argv) {
     }
 
     long int offset = 0;
-    long int tam = tamTextoArquivo / nthreads;
-    long int rem = tamTextoArquivo % nthreads;
+    long int tam = (tamTextoArquivo - tamSubstring) / nthreads;
+    long int rem = (tamTextoArquivo - tamSubstring) % nthreads;
 
     // criar as threads
     for ( long int i = 0; i < nthreads; i++ ) {
         args[i].id = i;
         args[i].offset = offset;
         args[i].lenTexto = tam;
-        args[i].texto = textoArquivo + offset;
 
         if ( rem > 0 ) {
             args[i].lenTexto += 1;
@@ -144,8 +146,8 @@ int main(int argc, char **argv) {
         }
         offset += args[i].lenTexto;
 
-        // printf("id=%ld, lenTexto=%ld, texto=%ld, rem=%ld\n",
-        //         args[i].id, args[i].lenTexto, args[i].texto, rem);
+        // printf("id=%ld, offset=%ld, lenTexto=%ld, rem=%ld\n",
+        //         args[i].id, args[i].offset, args[i].lenTexto, rem);
         if ( pthread_create(tid+i, NULL, tarefa, (void *) (args+i)) ) {
             fprintf(stderr, "ERRO--pthread_create\n");
             return 3;
@@ -164,6 +166,13 @@ int main(int argc, char **argv) {
 
     GET_TIME(fim);
 
+    // Abrindo arquivo de saída
+    FILE *fout = fopen(F_STD_OUT, "w");
+    if ( !fout ) {
+        fprintf(stderr, "ERRO--Não foi possível abrir %s\n", F_STD_OUT);
+        return 4;
+    }
+
     //IMPRIME OS VALORES
     int total = 0;
     for ( int i = 0; i < nthreads; i++ ) {
@@ -173,7 +182,7 @@ int main(int argc, char **argv) {
         if ( la->pos <= 0 ) continue; // nao achou nada
 
         while ( la ) {
-            printf("%d: %d\n", i, get_linkedArray(la, pos%50) );
+            fprintf(fout, "%d: %d\n", i, get_linkedArray(la, pos%50) );
             pos++;
             if ( pos%50 >= la->pos ) {
                 break;
@@ -185,8 +194,11 @@ int main(int argc, char **argv) {
         destroy_linkedArray(retorno[i]);
         total += pos;
     }
+
     free(retorno);
-    printf("houve %d posicoes encontradas\n", total);
+    fprintf(fout, "houve %d posicoes encontradas\n", total);
+
+    fclose(fout);
 
     printf("tempo da implementacao concorrente: %lf\n", fim-inicio);
     return 0;
