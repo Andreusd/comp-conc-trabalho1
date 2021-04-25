@@ -11,7 +11,7 @@
 
 #define TAM_BUF             5000000
 #define DEFAULT_FILENAME    "setup/entrada.txt"
-#define F_STD_OUT           "setup/saida.txt"
+#define F_STD_OUT           "setup/saida_conc.txt"
 
 typedef struct {
     long int id;

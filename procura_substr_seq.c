@@ -7,7 +7,7 @@
 
 #define TAM_BUF             5000000
 #define DEFAULT_FILENAME    "setup/entrada.txt"
-#define F_STD_OUT           "setup/saida.txt"
+#define F_STD_OUT           "setup/saida_seq.txt"
 
 linkedArray * procuraSubstr(char *string, char *substring) {
     linkedArray * la = novo_linkedArray();
