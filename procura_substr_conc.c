@@ -174,6 +174,8 @@ int main(int argc, char **argv) {
     }
 
     //IMPRIME OS VALORES
+    fprintf(fout, "indices:\n");
+
     int total = 0;
     for ( int i = 0; i < nthreads; i++ ) {
         int pos = 0;
