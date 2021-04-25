@@ -43,18 +43,20 @@ linkedArray * procuraSubstr(char *string, char *substring) {
 int main(int argc, char **argv) {
     char textoArquivo[TAM_BUF];
     char *nomeArquivo = DEFAULT_FILENAME;
-    char *stringProcurada;
+    char *substring;
     double inicio,fim; // variaveis para medir o tempo
 
+    // Lendo entrada
     if ( argc < 2 ) {
         fprintf(stderr, "digite %s <substring> [arquivoEntrada]\n", argv[0]);
         printf("argc: %d\n", argc);
         return 1;
     } else if ( argc == 3 ) {
-      nomeArquivo = argv[2];
+        nomeArquivo = argv[2];
     }
 
-    stringProcurada = argv[1];
+    // Inicializando string e substring
+    substring = argv[1];
 
     FILE *fptr = fopen(nomeArquivo, "r");
     if ( fptr == NULL ) {
@@ -65,15 +67,19 @@ int main(int argc, char **argv) {
 
     fclose(fptr);
 
+    // AQUI começa o trabalho
+
     GET_TIME(inicio);
-    linkedArray * la = procuraSubstr(textoArquivo, stringProcurada);
+    linkedArray * la = procuraSubstr(textoArquivo, substring);
     GET_TIME(fim);
+
+    // AQUI termina o trabalho
 
     printf("indices:\n");
     int pos = 0;
     linkedArray * primeiro = la;
 
-    // IMPRIME OS VALORES
+    // Imprime os valores
     while ( la ) {
         printf("%d\n",get_linkedArray(la,pos%50));
         pos++;
