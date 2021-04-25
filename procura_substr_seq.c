@@ -6,8 +6,8 @@
 #include "linked_array.c"
 
 #define TAM_BUF             5000000
-#define DEFAULT_FILENAME    "arquivo_alvo.txt"
-#define F_STD_OUT           "out.out"
+#define DEFAULT_FILENAME    "setup/entrada.txt"
+#define F_STD_OUT           "setup/saida.txt"
 
 linkedArray * procuraSubstr(char *string, char *substring) {
     linkedArray * la = novo_linkedArray();
