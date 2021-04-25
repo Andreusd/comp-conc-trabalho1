@@ -7,6 +7,7 @@
 
 #define TAM_BUF             5000000
 #define DEFAULT_FILENAME    "arquivo_alvo.txt"
+#define F_STD_OUT           "out.out"
 
 linkedArray * procuraSubstr(char *string, char *substring) {
     linkedArray * la = novo_linkedArray();
@@ -75,13 +76,20 @@ int main(int argc, char **argv) {
 
     // AQUI termina o trabalho
 
-    printf("indices:\n");
-    int pos = 0;
-    linkedArray * primeiro = la;
+    // Abrindo arquivo de saída
+    FILE *fout = fopen(F_STD_OUT, "w");
+    if ( !fout ) {
+        fprintf(stderr, "ERRO--Não foi possível abrir %s\n", F_STD_OUT);
+        return 4;
+    }
 
     // Imprime os valores
+    fprintf(fout, "indices:\n");
+
+    int pos = 0;
+    linkedArray * primeiro = la;
     while ( la ) {
-        printf("%d\n",get_linkedArray(la,pos%50));
+        fprintf(fout, "%d\n", get_linkedArray(la, pos%50));
         pos++;
         if ( pos%50 >= la->pos ) {
             break;
@@ -91,9 +99,11 @@ int main(int argc, char **argv) {
         }
     }
     destroy_linkedArray(primeiro);
-    printf("houve %d posicoes encontradas\n",pos);
+    fprintf(fout, "houve %d posicoes encontradas\n", pos);
 
-    printf("tempo da implementacao sequencial: %lf\n",fim-inicio);
+    fclose(fout);
+
+    printf("tempo da implementacao sequencial: %lf\n", fim-inicio);
 
     return 0;
 }
