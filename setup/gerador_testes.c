@@ -3,8 +3,8 @@
 #include <string.h>
 
 #define DEFAULT_SEED    1
-#define FILENAME        "wordlist.txt"
-#define OUT_FILE        "shuffled"
+#define FILENAME        "setup/wordlist.txt"
+#define OUT_FILE        "setup/shuffled"
 
 // Usa os indexes embaralhados para listar as palavras (não as separa com \n)
 void escreveSaida(FILE *fin, FILE *fout, unsigned long *v, unsigned long tam) {
@@ -109,10 +109,10 @@ int main(int argc, char **argv) {
 
     shuffle(seed, sequencia, numLinhas);
 
-    char fileName[20] = OUT_FILE;
+    char fileName[30] = OUT_FILE;
     int tamFileName = strlen(fileName);
 
-    printf("Gerando arquivo para teste...\n");
+    printf("Gerando arquivos para teste... ");
     fflush(stdout);
     for(int i=1;i<=7;i++) {
         fileName[tamFileName]=('0'+i);
@@ -120,7 +120,12 @@ int main(int argc, char **argv) {
         fileName[tamFileName+2]='t';
         fileName[tamFileName+3]='x';
         fileName[tamFileName+4]='t';
-        FILE *fout = fopen(fileName, "a+");
+
+        //apaga os arquivos se ja existirem
+        FILE *fout = fopen(fileName, "w");
+        fclose(fout);
+
+        fout = fopen(fileName, "a+");
         if ( !fout ) {
             printf("Não foi possível abrir para escrever: %s\n", OUT_FILE);
             free(sequencia);
@@ -129,9 +134,11 @@ int main(int argc, char **argv) {
         }
         for(int j=0;j<=pot(2,i);j++)
             escreveSaida(fin, fout, sequencia, numLinhas);
+	printf("%d/7 ok ",i);
+    	fflush(stdout);
         fclose(fout);
     }
-
+    printf("\n");
 
     free(sequencia);
 
