@@ -9,7 +9,7 @@
 #include "timer.h"
 #include "linked_array.c"
 
-#define TAM_BUF             5000000
+#define TAM_BUF             50000000
 #define DEFAULT_FILENAME    "setup/entrada.txt"
 #define F_STD_OUT           "setup/saida_conc.txt"
 
