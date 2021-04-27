@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
 
     printf("Gerando arquivos para teste... ");
     fflush(stdout);
-    for(int i=1;i<=7;i++) {
+    for(int i=1;i<=6;i++) {
         fileName[tamFileName]=('0'+i);
         fileName[tamFileName+1]='.';
         fileName[tamFileName+2]='t';
@@ -134,7 +134,7 @@ int main(int argc, char **argv) {
         }
         for(int j=0;j<=pot(2,i);j++)
             escreveSaida(fin, fout, sequencia, numLinhas);
-	printf("%d/7 ok ",i);
+	printf("%d/6 ok ",i);
     	fflush(stdout);
         fclose(fout);
     }

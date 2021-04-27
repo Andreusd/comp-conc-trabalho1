@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
 
     FILE *fptr = fopen(nomeArquivo, "r");
     if ( fptr == NULL ) {
-        printf("Erro na abertura!\n");
+        printf("Erro na abertura! renomeie o arquivo desejado em setup para entrada.txt ou passe-o como argumento!\n");
         exit(1);
     }
     fgets(textoArquivo, TAM_BUF, fptr);
