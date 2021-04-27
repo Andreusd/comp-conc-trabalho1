@@ -89,11 +89,11 @@ int main(int argc, char **argv) {
     int pos = 0;
     linkedArray * primeiro = la;
     while ( la ) {
-        fprintf(fout, "%d\n", get_linkedArray(la, pos%50));
-        pos++;
         if ( pos%50 >= la->pos ) {
             break;
         }
+        fprintf(fout, "%d\n", get_linkedArray(la, pos%50));
+        pos++;
         if ( pos%50 == 0 ) {
             la = la->next;
         }

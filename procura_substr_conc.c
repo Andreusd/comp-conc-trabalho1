@@ -180,15 +180,12 @@ int main(int argc, char **argv) {
     for ( int i = 0; i < nthreads; i++ ) {
         int pos = 0;
         linkedArray * la = retorno[i];
-
-        if ( la->pos <= 0 ) continue; // nao achou nada
-
         while ( la ) {
-            fprintf(fout, "%d: %d\n", i, get_linkedArray(la, pos%50) );
-            pos++;
             if ( pos%50 >= la->pos ) {
                 break;
             }
+            fprintf(fout, "%d: %d\n", i, get_linkedArray(la, pos%50) );
+            pos++;
             if ( pos%50 == 0 ) {
                 la = la->next;
             }
