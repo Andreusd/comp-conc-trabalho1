@@ -5,7 +5,6 @@
 #include "timer.h"
 #include "linked_array.c"
 
-#define TAM_BUF             50000000
 #define DEFAULT_FILENAME    "setup/entrada.txt"
 #define F_STD_OUT           "setup/saida_seq.txt"
 
@@ -42,7 +41,7 @@ linkedArray * procuraSubstr(char *string, char *substring) {
 }
 
 int main(int argc, char **argv) {
-    char textoArquivo[TAM_BUF];
+    char *textoArquivo;
     char *nomeArquivo = DEFAULT_FILENAME;
     char *substring;
     double inicio,fim; // variaveis para medir o tempo
@@ -64,7 +63,17 @@ int main(int argc, char **argv) {
         printf("Erro na abertura!\n");
         exit(1);
     }
-    fgets(textoArquivo, TAM_BUF, fptr);
+
+    // Descobre o tamanho do arquivo
+    fseek(fptr, 0, SEEK_END);
+    int tamanhoBuffer = ftell(fptr) + 10;
+    textoArquivo = malloc(sizeof(*textoArquivo)*tamanhoBuffer);
+    if(textoArquivo==NULL) {
+        printf("erro malloc textoArquivo");
+        return 5;
+    }
+    fseek(fptr, 0, SEEK_SET);
+    fgets(textoArquivo, tamanhoBuffer, fptr);
 
     fclose(fptr);
 
